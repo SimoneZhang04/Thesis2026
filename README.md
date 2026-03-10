@@ -1,10 +1,39 @@
-Repository used for the code used in the thesis, where we try to find the difficulty of input in classifiers. 
+Classifier Input Difficulty Analysis
+This repository contains the code used for my thesis research on quantifying the difficulty of data inputs.
 
-main_tabulardata.py trains and saves the classifier with scaler for each .csv file in a folder.
+Project Overview
+The goal of this project is to determine how "difficult" a specific datapoint is for any given classifier. A score function is defined for each classifier where:
 
-calculate_difficulty_function.py uses the saved classifier to calculate the difficulty function of each datapoint in each .csv file in a folder, by doing a mean of the score function of each classifier ( 0 if the classification is right, 1 if wrong). The output is saved in a .csv file in the folder called difficulty.
+0: Correct classification
 
-The folder where the .csv file are taken from is specified by the global variable CSV_FOLDER in main_tabulardata.py.
+1: Incorrect classification
 
-For now the classifier used are simple ones, to create working code later more will be added to get theoretic results.
+The difficulty is the mean of these scores across all trained classifiers.
 
+Core Scripts
+
+1. main_tabulardata.py
+Purpose: Iterates through all .csv files in the source folder to train classifiers, also saves the score of each classifier in a .csv file.
+
+Outputs: Saves the trained models and their respective scaler objects, in the source folder.
+
+Configuration: Set the CSV_FOLDER global variable to point to your source folder.
+
+2. calculate_difficulty_function.py
+Purpose: Loads the saved models and calculates the difficulty for every datapoint in the original datasets.
+
+Output: Generates new CSV files in the /difficulty subdirectory containing the original data plus the calculated difficulty scores.
+
+
+Requirements
+TODO
+
+How to run
+
+First train the classifier with main_tabulardata.py, and then run calculate_difficulty_function.py to calculate the difficulties.
+
+TO DO
+
+Create a program to divide the datapoints in different domains / analyze how to create those divisions.
+Create a program to calculate the difficulty of a new datapoint without doing the calculation for each classifier but doing a comparison with its domain and  closeness to another exsisting datapoint.
+Clean the code/refactor it (output files have .csv in between their name etc.).
