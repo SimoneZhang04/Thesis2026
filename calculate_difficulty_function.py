@@ -48,4 +48,5 @@ if __name__ == '__main__':
 
             # Calculates the difficulty function by getting a mean of each score
             df_original['difficulty_function'] = df_original.filter(score_col).mean(axis=1)
-            df_original.to_csv(os.path.join(" difficulty", "%s_with_difficulty_function.csv" % full_name), index=False)
+            # Saves the file to .csv with limit of 9 decimals (for difficulty function)
+            df_original.to_csv(os.path.join(" difficulty", "%s_with_difficulty_function.csv" % full_name), index=False, float_format = '%.9f')
