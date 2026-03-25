@@ -60,7 +60,3 @@ How to run
 First train the classifier with main_tabulardata.py, and then run calculate_difficulty_function.py to calculate the difficulties.
 
 TO DO
-
-Create a program to divide the datapoints in different domains / analyze how to create those divisions.
-Create a program to calculate the difficulty of a new datapoint without doing the calculation for each classifier but doing a comparison with its domain and  closeness to another exsisting datapoint.
-Clean the code/refactor it (output files have .csv in between their name etc.).
