@@ -29,7 +29,7 @@ from joblib import dump
 # ------- GLOBAL VARS -----------
 
 # Name of the folder in which look for tabular (CSV) datasets
-CSV_FOLDER = "NIDS"
+CSV_FOLDER = "HW_Failure"
 # Name of the column that contains the label in the tabular (CSV) dataset
 LABEL_NAME = 'multilabel'
 # Name of the 'normal' class in datasets. This will be used only for binary classification (anomaly detection)
@@ -44,6 +44,7 @@ VERBOSE = True
 # This transforms multi-class labels into binary labels (rule: normal class vs others)
 BINARIZE = True
 
+UTILS_FOLDER = 'utils'
 # SCALER SAVE FILE "%s_scaler.joblib" % full_name
 # CLASSIFIER SAVE FILE "%s_%s.joblib" % (full_name, type(classifier).__name__)
 # --------- SUPPORT FUNCTIONS ---------------
@@ -147,7 +148,7 @@ if __name__ == '__main__':
             # Scales the data and saves the scaler
             scaler = MinMaxScaler()
             x_scaled = scaler.fit_transform(x_no_cat)
-            dump(scaler, "%s_scaler.joblib" % full_name)
+            dump(scaler, os.path.join( UTILS_FOLDER,"%s_scaler.joblib" % full_name))
             x_train, x_test, y_train, y_test = ms.train_test_split(x_scaled, y, test_size=TT_SPLIT, shuffle=True)
 
             if VERBOSE:
@@ -166,7 +167,7 @@ if __name__ == '__main__':
                 os.remove("clf_dump.bin")
 
                 # Saving the model
-                dump(classifier, "%s_%s.joblib" % (full_name, type(classifier).__name__))
+                dump(classifier,os.path.join(UTILS_FOLDER, "%s_%s.joblib" % (full_name, type(classifier).__name__)))
 
                 # Computing metrics
                 y_pred = classifier.predict(x_test)
