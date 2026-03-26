@@ -25,7 +25,7 @@ SCORES_FILE = File where the score for each classifier will be saved. <br />
 TT_SPLIT = Percentage of the train-test split. (e.g. 0.3 is 30% test, 70% train) <br />
 VERBOSE = True if debug information needs to be shown. <br />
 BINARIZE = True if we want to conduct anomaly detection, transforms multi-class labels into binary labels. <br />
-UTILS_FOLDER = Folder where the utilities will be saved (Classifiers, scalers, etc.). <br />
+UTILS_FOLDER = Folder where the utilities will be saved (Classifiers, scalers, etc.). Files will be saved in a sub-folder with the same name as CSV_FOLDER. <br />
 
 2. calculate_difficulty_function.py
 Purpose: Loads the saved models and calculates the difficulty for every datapoint in every .csv file of a folder.
