@@ -15,7 +15,7 @@ Core Scripts
 1. main_tabulardata.py
 Purpose: Iterates through all .csv files in the source folder to train classifiers, also saves the score of each classifier in a .csv file.
 
-Outputs: Saves the trained models and their respective scaler objects, in the source folder.
+Outputs: The trained models and their respective scaler objects.
 
 Configuration: <br />
 CSV_FOLDER = Folder where the .csv file to work on are saved. <br />
@@ -38,7 +38,7 @@ OUTPUT_FOLDER = Folder where the outpuit will be saved. <br />
 UTILS_FOLDER = Folder where the utilities are saved (Classifiers, scalers, etc.).  <br />
 DIFFICULTY_FUNCTION_COL = Name of the difficulty-function column of the .csv file. Assumed to be the same for all files in the folder. <br />
 
-3. calculate_difficulty_function.py
+3. divide_file_to_train_&_test.py  
 Purpose: Divide the files with difficulty-function obtained from calculate_difficulty_function.py, into 2 separate files with the train_test_split() function from the sklearn library, stratifying with multilabel if avaliable, otherwhise with label.
 
 Output: Generates 2 .csv files, into 2 separate folders (train, test) with the same name as the original, for each .csv file in the folder.
@@ -52,11 +52,46 @@ MULTILABEL_COLUMN = Name of the multilabel column of the .csv files. Assumed to 
 LABEL_COLUMN =  Name of the label column of the .csv files. Assumed to be the same for all files in the folder. <br />
 SPLIT_SIZE = Percentage of the train-test split (e.g. 0.3 is 30% test, 70% train). <br />
 
-Requirements
-TODO
+4. calculate_new_input_difficulty.py
+Purpose: Calculate the difficulty function of a new datapoint with its confidence of the given value, using different methods:
+calculate_new_input_difficulty: Calculates the difficulty based on the nearest neighbours, with the option of doing it with weight.
+calculate_new_input_with_rf: Calculates the difficulty with a RandomForestRegressor model.
+calculate_new_input_with_lr: Calculates the difficulty with a LinearRegressor model.
+  
+
+Output: Generates a .csv file where each datapoint has the calculated difficulty with its confidence, and the classifier that was used if one was used.
+
+Configuration: <br />
+UTILS_FOLDER = Folder where the utilities are saved (Classifiers, scalers, etc.).  <br />
+INPUT_CLASSIFIER_FOLDER = Folder where the used Classifier will be saved. <br />
+DIFFICULTY_COLUMN = Name of the difficulty-function column of the training file. <br />
+DISTANCE_COLUMN = Name of the distance column that will be used to calculate the distance, will not be saved to file. <br />
+PREDICTED_DIFFICULTY_COLUMN = Prefix of the column that will have the predicted-difficulty-function, will be saved to the file. <br />
+CONFIDENCE_COLUMN =  Prefix of the column that will have the confidence of each prediction, will be saved to the file. <br />
+SCALER = Path where the scaler for the file createed from main_tabulardata.py is saved. <br />
+FULL_SOURCE_FILE_NAME = Path where the file with datapoint to predict the difficulty is saved.  <br />
+FULL_TRAIN_FILE_NAME = Path where the file with the dataset and the difficulty from calculate_difficulty_function.py is saved. <br />
+
+5. calculate_MAE.py
+Purpose: Calculate the MEA and average of the confidence for each method used in calculate_new_input_difficulty.py:
+
+Output: Generates a .csv file where for each method there's a row with MEA, average confidence.
+
+Configuration: <br />
+DIFFICULTY_COLUMN = Name of the difficulty-function column of the file. <br />
+PREDICTED_DIFFICULTY_COLUMN =  Prefix of the column that has the predicted-difficulty-function. <br />
+CONFIDENCE_COLUMN = Prefix of the column that has the confidence of each prediction. <br />
+FULL_FILE_NAME = Path where the file to work on is saved.  <br />
+FULL_OUTPUT_NAME = Path where the output will be saved.  <br />
+
+Requirements:
+os  <br />
+joblib <br />
+numpy <br />
+pandas <br />
 
 How to run
 
-First train the classifier with main_tabulardata.py, and then run calculate_difficulty_function.py to calculate the difficulties.
+First train the classifier with main_tabulardata.py, then use calculate_difficulty_function.py to calculate the difficulties, use calculate_new_input_difficulty.py to calculate the difficulty of a new datapoint.
 
 TO DO
