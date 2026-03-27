@@ -84,7 +84,7 @@ CONFIDENCE_COLUMN = Prefix of the column that has the confidence of each predict
 FULL_FILE_NAME = Path where the file to work on is saved.  <br />
 FULL_OUTPUT_NAME = Path where the output will be saved.  <br />
 
-Requirements:
+Requirements: <br />
 os  <br />
 joblib <br />
 numpy <br />
