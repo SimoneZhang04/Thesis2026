@@ -13,43 +13,43 @@ import main_tabulardata
 SOURCE_FOLDER = 'calculate_difficulty'
 TEST_FOLDER = os.path.join(SOURCE_FOLDER, 'test')
 TRAIN_FOLDER = os.path.join(SOURCE_FOLDER, 'train')
-SUB_FOLDER = 'HW_Failure'
+SUB_FOLDER = 'other_datasets'
+FILE_NAME = 'MetroPT2_shuffled.csv'
 
 # NEEDED VARS
 UTILS_FOLDER = 'utils'
 INPUT_CLASSIFIER_FOLDER = 'input_classifier'
-FILE_NAME = 'Baidu_SMART Dataset_15Perc_scikit.csv'
 DIFFICULTY_COLUMN = 'difficulty_function'
 PREDICTED_DIFFICULTY_COLUMN = 'predicted_difficulty_function'
 DISTANCE_COLUMN = 'distance'
 CONFIDENCE_COLUMN = 'confidence'
 
 SCALER = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%s_scaler.joblib' % FILE_NAME)
-FULL_TEST_FILE_NAME =os.path.join(TEST_FOLDER, SUB_FOLDER, FILE_NAME)
+FULL_SOURCE_FILE_NAME =os.path.join(TEST_FOLDER, SUB_FOLDER, FILE_NAME)
 FULL_TRAIN_FILE_NAME = os.path.join(TRAIN_FOLDER, SUB_FOLDER, FILE_NAME)
 
-def calculate_new_input_difficulty(test_dataframe, train_dataframe, number_of_neighbours, data_scaler, weighted):
+def calculate_new_input_difficulty(source_dataframe, train_dataframe, number_of_neighbours, data_scaler, weighted):
 
     difficulty = []
     confidence = []
 
     # Fills NAN to 0
     train_dataframe = train_dataframe.fillna(0)
-    test_dataframe = test_dataframe.fillna(0)
+    source_dataframe = source_dataframe.fillna(0)
     # Filters out columns that are not in the original (e.g. filters out score function columns)
     train_df_filtered = train_dataframe.drop(columns=column_to_remove)
     # Filters out columns that are not in the original, this time with the addition of predicted difficulty and confidence columns
-    test_df_filtered = test_dataframe[train_df_filtered.columns]
+    source_df_filtered = source_dataframe[train_df_filtered.columns]
 
     # Filters out non numeric columns
     train_df_non_numeric = train_df_filtered.select_dtypes(exclude=['object']).to_numpy()
-    test_df_non_numeric = test_df_filtered.select_dtypes(exclude=['object']).to_numpy()
+    source_df_non_numeric = source_df_filtered.select_dtypes(exclude=['object']).to_numpy()
 
     train_df_scaled = data_scaler.transform(train_df_non_numeric)
-    test_df_scaled = data_scaler.transform(test_df_non_numeric)
+    source_df_scaled = data_scaler.transform(source_df_non_numeric)
     train_df_difficulty_values = train_dataframe[DIFFICULTY_COLUMN].to_numpy()
 
-    for row in test_df_scaled:
+    for row in source_df_scaled:
         # Calculates the distance between the input and each datapoint in the dataset
         distances = numpy.linalg.norm(train_df_scaled - row, axis=1)
         #Finds the n closest neighbours
@@ -94,19 +94,19 @@ def calculate_new_input_difficulty(test_dataframe, train_dataframe, number_of_ne
     suffix = '_with_' + number_of_neighbours.__str__() + 'neighbours'
     if weighted:
         suffix += '_weighted'
-    test_dataframe[PREDICTED_DIFFICULTY_COLUMN + suffix] = difficulty
-    test_dataframe[CONFIDENCE_COLUMN + suffix] = confidence
+    source_dataframe[PREDICTED_DIFFICULTY_COLUMN + suffix] = difficulty
+    source_dataframe[CONFIDENCE_COLUMN + suffix] = confidence
 
-    return test_dataframe
+    return source_dataframe
 
-def calculate_new_input_with_rf(test_dataframe, train_dataframe, number_of_trees):
+def calculate_new_input_with_rf(source_dataframe, train_dataframe, number_of_trees):
 
-    # Filters out columns that are not in the original (e.g. filters out score function columns), and non numeric ones
+    # Filters out columns that are not in the original (e.g. filters out score function columns), and non-numeric ones
     x_train_df_filtered = train_dataframe.drop(columns=column_to_remove).select_dtypes(exclude=['object'])
     y_train_df_filtered = train_dataframe[DIFFICULTY_COLUMN].to_numpy()
-    x_test_df_filtered = test_dataframe[x_train_df_filtered.columns]
-    x_test_df_filtered = x_test_df_filtered.fillna(0)
-    x_test_df_filtered = x_test_df_filtered.to_numpy()
+    x_source_df_filtered = source_dataframe[x_train_df_filtered.columns]
+    x_source_df_filtered = x_source_df_filtered.fillna(0)
+    x_source_df_filtered = x_source_df_filtered.to_numpy()
     x_train_df_filtered = x_train_df_filtered.fillna(0)
     x_train_df_filtered = x_train_df_filtered.to_numpy()
 
@@ -114,56 +114,56 @@ def calculate_new_input_with_rf(test_dataframe, train_dataframe, number_of_trees
     rf_model = RandomForestRegressor(n_estimators=number_of_trees, random_state=42)
     rf_model.fit(x_train_df_filtered, y_train_df_filtered)
 
-    predictions = rf_model.predict(x_test_df_filtered)
+    predictions = rf_model.predict(x_source_df_filtered)
 
     # Calculate the confidence
-    tree_predictions = numpy.array([tree.predict(x_test_df_filtered ) for tree in rf_model.estimators_])
+    tree_predictions = numpy.array([tree.predict(x_source_df_filtered ) for tree in rf_model.estimators_])
 
     prediction_sdt = numpy.std(tree_predictions, axis=0)
 
     confidence = numpy.exp(-prediction_sdt)
 
-    test_dataframe[PREDICTED_DIFFICULTY_COLUMN + '_with_rf'] = predictions
-    test_dataframe[CONFIDENCE_COLUMN + '_with_rf'] = confidence
+    source_dataframe[PREDICTED_DIFFICULTY_COLUMN + '_with_rf'] = predictions
+    source_dataframe[CONFIDENCE_COLUMN + '_with_rf'] = confidence
 
-    return test_dataframe, rf_model
+    return source_dataframe, rf_model
 
 
-def calculate_new_input_with_lr(test_dataframe, train_dataframe, data_scaler):
+def calculate_new_input_with_lr(source_dataframe, train_dataframe, data_scaler):
 
     # Filters out columns that are not in the original (e.g. filters out score function columns)
     x_train_df_filtered = train_dataframe.drop(columns=column_to_remove).select_dtypes(exclude=['object'])
     y_train_df_filtered = train_dataframe[DIFFICULTY_COLUMN].to_numpy()
-    x_test_df_filtered = test_dataframe[x_train_df_filtered.columns]
-    x_test_df_filtered = x_test_df_filtered.fillna(0)
-    x_test_df_filtered = x_test_df_filtered.to_numpy()
+    x_source_df_filtered = source_dataframe[x_train_df_filtered.columns]
+    x_source_df_filtered = x_source_df_filtered.fillna(0)
+    x_source_df_filtered = x_source_df_filtered.to_numpy()
     x_train_df_filtered = x_train_df_filtered.fillna(0)
     x_train_df_filtered = x_train_df_filtered.to_numpy()
 
     x_train_scaled = data_scaler.transform(x_train_df_filtered)
-    x_test_scaled = data_scaler.transform(x_test_df_filtered)
+    x_source_scaled = data_scaler.transform(x_source_df_filtered)
 
     # Initiate and train the model
     lr_model = LinearRegression()
     lr_model.fit(x_train_scaled, y_train_df_filtered)
 
-    predictions = lr_model.predict(x_test_scaled)
+    predictions = lr_model.predict(x_source_scaled)
 
     mean = numpy.mean(x_train_scaled, axis=0)
     std = numpy.std(x_train_scaled, axis=0) + 0.0001
-    z_scores = (x_test_scaled - mean) / std
+    z_scores = (x_source_scaled - mean) / std
     distance = numpy.linalg.norm(z_scores, axis=1)
 
     confidence = numpy.exp(-distance)
-    test_dataframe[PREDICTED_DIFFICULTY_COLUMN + '_with_lr'] = predictions
-    test_dataframe[CONFIDENCE_COLUMN + '_with_lr'] = confidence
+    source_dataframe[PREDICTED_DIFFICULTY_COLUMN + '_with_lr'] = predictions
+    source_dataframe[CONFIDENCE_COLUMN + '_with_lr'] = confidence
 
-    return test_dataframe, lr_model
+    return source_dataframe, lr_model
 
 if __name__ == '__main__':
     column_to_remove = []
     # Reads source df
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
     # Reads df with their domains and difficulty
     train_df = pandas.read_csv(FULL_TRAIN_FILE_NAME, sep=",")
     # Loads scaler, same one as the one used to scale data to give to classifier
@@ -174,36 +174,36 @@ if __name__ == '__main__':
 
     column_to_remove.append(DIFFICULTY_COLUMN)
 
-    df_final = calculate_new_input_difficulty(test_df.copy(), train_df.copy(), 3, scaler, weighted=True)
+    df_final = calculate_new_input_difficulty(source_df.copy(), train_df.copy(), 3, scaler, weighted=True)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format='%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
     # REPEATS FOR 5 TIMES WITH DIFFERENT ALGORITHMS/PARAMETER TO DELETE AFTER
     # REPEATS FOR 5 TIMES WITH DIFFERENT ALGORITHMS/PARAMETER TO DELETE AFTER
     # REPEATS FOR 5 TIMES WITH DIFFERENT ALGORITHMS/PARAMETER TO DELETE AFTER
 
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
-    df_final, model = calculate_new_input_with_rf(test_df.copy(), train_df.copy(), 100 )
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    df_final, model = calculate_new_input_with_rf(source_df.copy(), train_df.copy(), 100)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format = '%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format ='%.5f')
     dump( model, os.path.join(UTILS_FOLDER,INPUT_CLASSIFIER_FOLDER, "%s_%s.joblib" % (FILE_NAME, type(model).__name__)))
 
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
-    df_final, model = calculate_new_input_with_lr(test_df.copy(), train_df.copy(), scaler)
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    df_final, model = calculate_new_input_with_lr(source_df.copy(), train_df.copy(), scaler)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format='%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
     dump(model, os.path.join(UTILS_FOLDER, INPUT_CLASSIFIER_FOLDER, "%s_%s.joblib" % (FILE_NAME, type(model).__name__)))
 
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
-    df_final= calculate_new_input_difficulty(test_df.copy(), train_df.copy(), 3, scaler, weighted=False)
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    df_final= calculate_new_input_difficulty(source_df.copy(), train_df.copy(), 3, scaler, weighted=False)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format='%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
-    df_final = calculate_new_input_difficulty(test_df.copy(), train_df.copy(), 5, scaler, weighted=True)
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    df_final = calculate_new_input_difficulty(source_df.copy(), train_df.copy(), 5, scaler, weighted=True)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format='%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
-    test_df = pandas.read_csv(FULL_TEST_FILE_NAME, sep=",")
-    df_final = calculate_new_input_difficulty(test_df.copy(), train_df.copy(), 5, scaler, weighted=False)
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    df_final = calculate_new_input_difficulty(source_df.copy(), train_df.copy(), 5, scaler, weighted=False)
     # Saves the df with calculated difficulty to .csv file
-    df_final.to_csv(FULL_TEST_FILE_NAME, index=False, float_format='%.5f')
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')

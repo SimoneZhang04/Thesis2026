@@ -4,10 +4,10 @@ import pandas
 import sklearn.model_selection as ms
 
 # Sub folder where the .csv file will be taken from
-SOURCE_SUB_FOLDER = 'HW_Failure'
+SOURCE_SUB_FOLDER = 'other_datasets'
 
 SOURCE_FOLDER = os.path.join('difficulty', SOURCE_SUB_FOLDER)
-OUTPUT_FOLDER = 'calculate_difficullty'
+OUTPUT_FOLDER = 'calculate_difficulty'
 TEST_FOLDER = 'test'
 TRAIN_FOLDER = 'train'
 MULTILABEL_COLUMN = 'multilabel'

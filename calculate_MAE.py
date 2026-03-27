@@ -6,17 +6,15 @@ from sklearn.metrics import mean_absolute_error
 # Folders to get and save the data
 # OPTIONAL VARS
 SOURCE_FOLDER = 'calculate_difficulty'
-SUB_FOLDER = 'HW_Failure'
+SUB_FOLDER = 'other_datasets'
 OUTPUT_FOLDER = 'MAE'
-
+FILE_NAME = 'MetroPT2_shuffled.csv'
 # NEEDED VARS
 DIFFICULTY_COLUMN = 'difficulty_function'
 PREDICTED_DIFFICULTY_COLUMN = 'predicted_difficulty_function'
-DISTANCE_COLUMN = 'distance'
 CONFIDENCE_COLUMN = 'confidence'
-FILE_NAME = 'Baidu_SMART Dataset_15Perc_scikit.csv'
 FULL_FILE_NAME = os.path.join(SOURCE_FOLDER, 'test', SUB_FOLDER, FILE_NAME)
-FULL_OUTPUT_FOLDER = os.path.join(OUTPUT_FOLDER, SUB_FOLDER, FILE_NAME)
+FULL_OUTPUT_NAME = os.path.join(OUTPUT_FOLDER, SUB_FOLDER, FILE_NAME)
 
 def calculate_mae(dataframe):
     results = []
@@ -54,4 +52,4 @@ def calculate_mae(dataframe):
 if __name__ == '__main__':
     df = pandas.read_csv(FULL_FILE_NAME)
     final_df = calculate_mae(df)
-    final_df.to_csv(FULL_OUTPUT_FOLDER, index=False)
+    final_df.to_csv(FULL_OUTPUT_NAME, index=False)
