@@ -3,6 +3,7 @@ import os
 import pandas
 from sklearn.metrics import mean_absolute_error
 
+
 # Folders to get and save the data
 # OPTIONAL VARS
 SOURCE_FOLDER = 'calculate_difficulty'
