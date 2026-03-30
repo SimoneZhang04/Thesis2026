@@ -69,7 +69,9 @@ DISTANCE_COLUMN = Name of the distance column that will be used to calculate the
 PREDICTED_DIFFICULTY_COLUMN = Prefix of the column that will have the predicted-difficulty-function, will be saved to the file. <br />
 CONFIDENCE_COLUMN =  Prefix of the column that will have the confidence of each prediction, will be saved to the file. <br />
 SCALER = Path where the scaler for the file createed from main_tabulardata.py is saved. <br />
-FULL_SOURCE_FILE_NAME = Path where the file with datapoint to predict the difficulty is saved.  <br />
+TIME_COLUMN = Prefix of the column that will have the average time taken to calculate the difficulty. <br />
+NEAREST_NEIGHBOUR = Path where the file with the NearestNeighbour file generated from sklearn.neighbors is saved. <br />
+FULL_SOURCE_FILE_NAME = Path where the file with datapoint to predict the difficulty is saved. <br />
 FULL_TRAIN_FILE_NAME = Path where the file with the dataset and the difficulty from calculate_difficulty_function.py is saved. <br />
 
 5. calculate_MAE.py
