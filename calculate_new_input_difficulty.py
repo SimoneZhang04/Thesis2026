@@ -25,20 +25,23 @@ PREDICTED_DIFFICULTY_COLUMN = 'predicted_difficulty_function'
 DISTANCE_COLUMN = 'distance'
 CONFIDENCE_COLUMN = 'confidence'
 TIME_COLUMN = 'time'
-NEAREST_NEIGHBOUR = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%snearest_neighbour_joblib' % FILE_NAME)
+NEAREST_NEIGHBOUR_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%snearest_neighbour.joblib' % FILE_NAME)
+XGB_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%sxgb.joblib' % FILE_NAME)
+
+LR_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%slr.joblib' % FILE_NAME)
 SCALER = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%s_scaler.joblib' % FILE_NAME)
 FULL_SOURCE_FILE_NAME =os.path.join(TEST_FOLDER, SUB_FOLDER, FILE_NAME)
 FULL_TRAIN_FILE_NAME = os.path.join(TRAIN_FOLDER, SUB_FOLDER, FILE_NAME)
 
 
-def get_best_from_col_name(row, columns):
+def get_best_by_confidence(row, columns):
     best_col = row[columns].idxmax()
     suffix = "_with_" + best_col.split('_with_')[-1]
 
-    return pandas.Series([
-        row[PREDICTED_DIFFICULTY_COLUMN + suffix],
-        row[CONFIDENCE_COLUMN + suffix]
-    ])
+    return pandas.Series({
+        DIFFICULTY_COLUMN :row[PREDICTED_DIFFICULTY_COLUMN + suffix],
+        CONFIDENCE_COLUMN :row[CONFIDENCE_COLUMN + suffix]
+    })
 
 def calculate_new_input_difficulty(source_dataframe, train_dataframe, number_of_neighbours, data_scaler, weighted):
 
@@ -59,12 +62,12 @@ def calculate_new_input_difficulty(source_dataframe, train_dataframe, number_of_
     train_df_difficulty_values = train_dataframe[DIFFICULTY_COLUMN].to_numpy()
 
     # Loads the NearestNeighbour model or creates it using training set
-    if os.path.isfile(NEAREST_NEIGHBOUR):
-        knn = joblib.load(NEAREST_NEIGHBOUR)
+    if os.path.isfile(NEAREST_NEIGHBOUR_FILE_NAME):
+        knn = joblib.load(NEAREST_NEIGHBOUR_FILE_NAME)
     else:
         knn = NearestNeighbors(n_neighbors=number_of_neighbours, algorithm= 'auto')
         knn.fit(train_df_scaled)
-        joblib.dump(knn, NEAREST_NEIGHBOUR)
+        joblib.dump(knn, NEAREST_NEIGHBOUR_FILE_NAME)
 
     distances, indices = knn.kneighbors(source_df_scaled)
 
@@ -126,12 +129,12 @@ def calculate_new_input_difficulty_max_neighbours(source_dataframe, train_datafr
     train_df_difficulty_values = train_dataframe[DIFFICULTY_COLUMN].to_numpy()
 
     # Loads the NearestNeighbour model or creates it using training set
-    if os.path.isfile(NEAREST_NEIGHBOUR):
-        knn = joblib.load(NEAREST_NEIGHBOUR)
+    if os.path.isfile(NEAREST_NEIGHBOUR_FILE_NAME):
+        knn = joblib.load(NEAREST_NEIGHBOUR_FILE_NAME)
     else:
         knn = NearestNeighbors(n_neighbors=number_of_neighbours, algorithm='auto')
         knn.fit(train_df_scaled)
-        joblib.dump(knn, NEAREST_NEIGHBOUR)
+        joblib.dump(knn, NEAREST_NEIGHBOUR_FILE_NAME)
 
     distances, indices = knn.kneighbors(source_df_scaled)
 
@@ -160,15 +163,16 @@ def calculate_new_input_difficulty_confidence(source_dataframe):
 
     columns = source_dataframe.filter(like=CONFIDENCE_COLUMN).columns.tolist()
 
-    difficulty, confidence = source_dataframe.apply(get_best_from_col_name, axis=1, columns=columns)
+    result = source_dataframe.apply(get_best_by_confidence, axis=1, columns=columns)
 
-    suffix = '_with_' + 'confidence'
+    suffix = '_with_' + 'conf'
 
-    source_dataframe[PREDICTED_DIFFICULTY_COLUMN + suffix] = difficulty
-    source_dataframe[CONFIDENCE_COLUMN + suffix] = confidence
+    source_dataframe[PREDICTED_DIFFICULTY_COLUMN + suffix] = result[DIFFICULTY_COLUMN]
+    source_dataframe[CONFIDENCE_COLUMN + suffix] = result[CONFIDENCE_COLUMN]
     return source_dataframe
 
 def calculate_new_input_with_rf(source_dataframe, train_dataframe, number_of_trees):
+    rf_file_name = os.path.join(UTILS_FOLDER, SUB_FOLDER, f'%srf_{number_of_trees}_trees.joblib' % FILE_NAME )
 
     # Filters out columns that are not in the original (e.g. filters out score function columns), and non-numeric ones
     x_train_df_filtered = train_dataframe.drop(columns=column_to_remove).select_dtypes(exclude=['object'])
@@ -179,9 +183,15 @@ def calculate_new_input_with_rf(source_dataframe, train_dataframe, number_of_tre
     x_train_df_filtered = x_train_df_filtered.fillna(0)
     x_train_df_filtered = x_train_df_filtered.to_numpy()
 
-    # Initiate and train the model
-    rf_model = RandomForestRegressor(n_estimators=number_of_trees, random_state=42)
-    rf_model.fit(x_train_df_filtered, y_train_df_filtered)
+
+
+    # Loads the rf model or creates it using training set
+    if os.path.isfile(rf_file_name):
+        rf_model = joblib.load(rf_file_name)
+    else:
+        rf_model = RandomForestRegressor(n_estimators=number_of_trees, random_state=42)
+        rf_model.fit(x_train_df_filtered, y_train_df_filtered)
+        joblib.dump(rf_model, rf_file_name)
 
     predictions = rf_model.predict(x_source_df_filtered)
 
@@ -212,9 +222,13 @@ def calculate_new_input_with_lr(source_dataframe, train_dataframe, data_scaler):
     x_train_scaled = data_scaler.transform(x_train_df_filtered)
     x_source_scaled = data_scaler.transform(x_source_df_filtered)
 
-    # Initiate and train the model
-    lr_model = LinearRegression()
-    lr_model.fit(x_train_scaled, y_train_df_filtered)
+    # Loads the lr model or creates it using training set
+    if os.path.isfile(LR_FILE_NAME):
+        lr_model = joblib.load(LR_FILE_NAME)
+    else:
+        lr_model = LinearRegression()
+        lr_model.fit(x_train_scaled, y_train_df_filtered)
+        joblib.dump(lr_model, LR_FILE_NAME)
 
     predictions = lr_model.predict(x_source_scaled)
 
@@ -230,6 +244,7 @@ def calculate_new_input_with_lr(source_dataframe, train_dataframe, data_scaler):
     return source_dataframe, lr_model
 
 def calculate_new_input_with_xgb(source_dataframe, train_dataframe, data_scaler, number_of_trees):
+    xgb_file_name = os.path.join(UTILS_FOLDER, SUB_FOLDER, f'%sxgb_{number_of_trees}_trees.joblib' % FILE_NAME)
     individual_preds = []
 
     # Filters out columns that are not in the original (e.g. filters out score function columns)
@@ -244,9 +259,16 @@ def calculate_new_input_with_xgb(source_dataframe, train_dataframe, data_scaler,
     x_train_scaled = data_scaler.transform(x_train_df_filtered)
     x_source_scaled = data_scaler.transform(x_source_df_filtered)
 
-    # Initiate and train the model
-    xgb_model = XGBRegressor(n_estimators=number_of_trees, random_state=42, learning_rate=0.1, max_depth=6, objective='reg:squarederror')
-    xgb_model.fit(x_train_scaled, y_train_df_filtered)
+
+
+    # Loads the xgb model or creates it using training set
+    if os.path.isfile(xgb_file_name):
+        xgb_model = joblib.load(xgb_file_name)
+    else:
+        xgb_model = XGBRegressor(n_estimators=number_of_trees, random_state=42, learning_rate=0.1, max_depth=6,
+                                 objective='reg:squarederror')
+        xgb_model.fit(x_train_scaled, y_train_df_filtered)
+        joblib.dump(xgb_model, xgb_file_name)
 
     predictions = xgb_model.predict(x_source_scaled)
 
@@ -285,8 +307,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
 
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
@@ -303,8 +325,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format ='%.5f')
     dump( model, os.path.join(UTILS_FOLDER,INPUT_CLASSIFIER_FOLDER, "%s_%s.joblib" % (FILE_NAME, type(model).__name__)))
@@ -315,8 +337,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
     dump(model, os.path.join(UTILS_FOLDER, INPUT_CLASSIFIER_FOLDER, "%s_%s.joblib" % (FILE_NAME, type(model).__name__)))
@@ -327,8 +349,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
@@ -338,8 +360,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
@@ -349,8 +371,8 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
@@ -360,20 +382,20 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
     dump(model, os.path.join(UTILS_FOLDER, INPUT_CLASSIFIER_FOLDER, "%s_%s.joblib" % (FILE_NAME, type(model).__name__)))
 
     source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
     start_time = time.time()
-    df_final= calculate_new_input_difficulty_confidence(source_df.copy())
+    df_final = calculate_new_input_difficulty_max_neighbours(source_df.copy(), train_df.copy(), 3, scaler)
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
 
@@ -383,7 +405,18 @@ if __name__ == '__main__':
     end_time = time.time()
     total_time = end_time - start_time
     time_for_row = total_time / len(df_final)
-    suffix = df_final.columns[-1].split(CONFIDENCE_COLUMN)[-1]
-    df_final[TIME_COLUMN + suffix] = time_for_row * 1000
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
+    # Saves the df with calculated difficulty to .csv file
+    df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
+
+    source_df = pandas.read_csv(FULL_SOURCE_FILE_NAME, sep=",")
+    start_time = time.time()
+    df_final = calculate_new_input_difficulty_confidence(source_df.copy())
+    end_time = time.time()
+    total_time = end_time - start_time
+    time_for_row = total_time / len(df_final)
+    suffix = df_final.columns[-1].split('_with_')[-1]
+    df_final[TIME_COLUMN + '_with_' + suffix] = time_for_row * 1000
     # Saves the df with calculated difficulty to .csv file
     df_final.to_csv(FULL_SOURCE_FILE_NAME, index=False, float_format='%.5f')
