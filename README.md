@@ -54,10 +54,12 @@ SPLIT_SIZE = Percentage of the train-test split (e.g. 0.3 is 30% test, 70% train
 
 4. calculate_new_input_difficulty.py
 Purpose: Calculate the difficulty function of a new datapoint with its confidence of the given value, using different methods:
-calculate_new_input_difficulty: Calculates the difficulty based on the nearest neighbours, with the option of doing it with weight.
-calculate_new_input_with_rf: Calculates the difficulty with a RandomForestRegressor model.
-calculate_new_input_with_lr: Calculates the difficulty with a LinearRegressor model.
-  
+calculate_new_input_difficulty: Calculates the difficulty based on the nearest neighbours, with the option of doing it with weight. <br />
+calculate_new_input_with_rf: Calculates the difficulty with a RandomForestRegressor model. <br />
+calculate_new_input_with_lr: Calculates the difficulty with a LinearRegressor model. <br />
+calculate_new_input_with_xgb : Calculates the difficulty with a XGB (Extreme Gradient Boosting) model. <br />
+calculate_new_input_difficulty_max_neighbours: Calculates the difficulty by taking the highest diffficulty among its neighbours. <br />
+calculate_new_input_difficulty_confidence:  Calculates the difficulty by taking the difficulty of the previous prediction with the highest confidence. <br />
 
 Output: Generates a .csv file where each datapoint has the calculated difficulty with its confidence, and the classifier that was used if one was used.
 
@@ -74,6 +76,8 @@ NEAREST_NEIGHBOUR = Path where the file with the NearestNeighbour file generated
 FULL_SOURCE_FILE_NAME = Path where the file with datapoint to predict the difficulty is saved. <br />
 FULL_TRAIN_FILE_NAME = Path where the file with the dataset and the difficulty from calculate_difficulty_function.py is saved. <br />
 LR_FILE_NAME =  Path where the file with the lr model is saved. <br />
+SUB_FOLDER = Sub-folder where the different files are saved. <br />
+FILE_NAME = Name of the file that is used in the loading/saving of xgb and rf models. <br />
 5. calculate_MAE.py
 Purpose: Calculate the MEA and average of the confidence for each method used in calculate_new_input_difficulty.py:
 
