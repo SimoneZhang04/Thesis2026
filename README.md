@@ -73,7 +73,7 @@ TIME_COLUMN = Prefix of the column that will have the average time taken to calc
 NEAREST_NEIGHBOUR = Path where the file with the NearestNeighbour file generated from sklearn.neighbors is saved. <br />
 FULL_SOURCE_FILE_NAME = Path where the file with datapoint to predict the difficulty is saved. <br />
 FULL_TRAIN_FILE_NAME = Path where the file with the dataset and the difficulty from calculate_difficulty_function.py is saved. <br />
-
+LR_FILE_NAME =  Path where the file with the lr model is saved. <br />
 5. calculate_MAE.py
 Purpose: Calculate the MEA and average of the confidence for each method used in calculate_new_input_difficulty.py:
 
