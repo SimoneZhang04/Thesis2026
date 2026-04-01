@@ -26,8 +26,6 @@ DISTANCE_COLUMN = 'distance'
 CONFIDENCE_COLUMN = 'confidence'
 TIME_COLUMN = 'time'
 NEAREST_NEIGHBOUR_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%snearest_neighbour.joblib' % FILE_NAME)
-XGB_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%sxgb.joblib' % FILE_NAME)
-
 LR_FILE_NAME = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%slr.joblib' % FILE_NAME)
 SCALER = os.path.join(UTILS_FOLDER, SUB_FOLDER, '%s_scaler.joblib' % FILE_NAME)
 FULL_SOURCE_FILE_NAME =os.path.join(TEST_FOLDER, SUB_FOLDER, FILE_NAME)
