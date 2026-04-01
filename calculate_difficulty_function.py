@@ -6,7 +6,7 @@ import pandas
 
 import main_tabulardata
 
-SOURCE_FOLDER = "HW_Failure"
+SOURCE_FOLDER = "other_datasets"
 OUTPUT_FOLDER = 'difficulty'
 UTILS_FOLDER = "utils"
 DIFFICULTY_FUNCTION_COL = 'difficulty_function'
